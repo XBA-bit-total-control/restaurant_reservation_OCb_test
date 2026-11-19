@@ -1,0 +1,19 @@
+[project]
+name = "restaurant-reservation"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Vladislav Huc", email = "vladislavhucisvili@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.165.0",
+]
+
+[project.scripts]
+restaurant-reservation = "restaurant_reservation:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
