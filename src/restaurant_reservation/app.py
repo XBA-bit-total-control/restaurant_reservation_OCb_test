@@ -26,7 +26,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.include_router(router, prefix="/api", tags=["bookings"])
+app.include_router(router, tags=["bookings"])
 
 
 @app.get("/")
