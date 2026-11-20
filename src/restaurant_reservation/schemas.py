@@ -47,7 +47,10 @@ class BookingCreate(BaseModel):
             raise ValueError("Booking time must be between 12:00 and 22:00")
         if value.minute != 0:
             raise ValueError("Booking time must have zero minutes. Use the HH:00 format")
-        # Проверку second решил опустить так как посчитал незначительной
+        if value.second != 0:
+            raise ValueError("Booking time must have zero seconds")
+        if value.microsecond != 0:
+            raise ValueError("Booking time must have zero microseconds")
         return value
 
     model_config = ConfigDict(
