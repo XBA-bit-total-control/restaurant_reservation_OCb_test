@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def client():
     package_dir = Path(__file__).resolve().parents[1] / "src" / "restaurant_reservation"
     test_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -49,3 +49,11 @@ def booking_payload(correct_date):
         "booking_time": "15:00:00",
         "guests": 4,
     }
+
+
+@pytest.fixture
+def created_booking(client, booking_payload):
+    """Создаёт исходную бронь для теста и возвращает её данные."""
+    response = client.post("/bookings", json=booking_payload)
+    assert response.status_code == 201, f"Could not create test booking: {response.text}"
+    return response.json()
