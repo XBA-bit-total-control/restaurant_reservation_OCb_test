@@ -1,19 +1,17 @@
 from datetime import date as dt
 from uuid import UUID
 
-from fastapi import Depends
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db import get_async_session
-from models import Booking, BookingStatus
-from schemas import BookingCreate, BookingOut
 from exceptions import SlotAlreadyBookedError, BookingNotFoundError
+from models import Booking, BookingStatus
+from schemas import BookingCreate
 
 
 async def create_booking(
-        data: BookingCreate,
-        async_session: AsyncSession = Depends(get_async_session)
+        async_session: AsyncSession,
+        data: BookingCreate
 ) -> Booking:
     """Создаёт бронь на свободный слот и добавляет её в сессию."""
     check_exists = await async_session.execute(select(Booking)
@@ -31,9 +29,9 @@ async def create_booking(
 
 
 async def get_list_booking(
-        date: dt | None = None,
-        async_session: AsyncSession = Depends(get_async_session)
-) -> list[BookingOut]:
+        async_session: AsyncSession,
+        date: dt | None = None
+) -> list[Booking]:
     """Возвращает список броней с необязательным фильтром по дате."""
     stmt = select(Booking)
     if date is not None:
@@ -44,8 +42,8 @@ async def get_list_booking(
 
 
 async def get_booking_by_id(
-        id: UUID,
-        async_session: AsyncSession = Depends(get_async_session)
+        async_session: AsyncSession,
+        id: UUID
 ) -> Booking | None:
     """Возвращает бронь по идентификатору или None, если её нет."""
     booking = await async_session.execute(select(Booking).where(Booking.id == id))
@@ -53,11 +51,11 @@ async def get_booking_by_id(
 
 
 async def delete_booking(
-        id: UUID,
-        async_session: AsyncSession = Depends(get_async_session)
+        async_session: AsyncSession,
+        id: UUID
 ) -> Booking:
     """Отменяет бронь по идентификатору, сохраняя запись в базе."""
-    booking = await get_booking_by_id(id, async_session)
+    booking = await get_booking_by_id(async_session, id)
     if booking is None:
         raise BookingNotFoundError("Booking not found")
     booking.status = BookingStatus.CANCELLED
