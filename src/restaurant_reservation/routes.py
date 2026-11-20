@@ -1,7 +1,9 @@
+import sqlite3
 from datetime import date as dt
 from uuid import UUID
 
 from fastapi import HTTPException, Depends, APIRouter
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import services
@@ -26,12 +28,29 @@ async def create_booking(
     try:
         booking = await services.create_booking(data, async_session)
         await async_session.commit()
+
     except SlotAlreadyBookedError as error:
         await async_session.rollback()
         raise HTTPException(
             status_code=409,
             detail="Slot is already booked"
         ) from error
+
+    except IntegrityError as error:
+        await async_session.rollback()
+        original = error.orig
+        if getattr(original, "sqlite_errorcode", None) == sqlite3.SQLITE_CONSTRAINT_UNIQUE:
+            if str(original) == "UNIQUE constraint failed: bookings.booking_date, bookings.booking_time":
+                raise HTTPException(
+                    status_code=409,
+                    detail="Slot is already booked",
+                ) from error
+
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error",
+        ) from error
+
     except Exception:
         await async_session.rollback()
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -70,9 +89,11 @@ async def get_booking_by_id(
     """Возвращает бронь по идентификатору."""
     try:
         booking = await services.get_booking_by_id(id, async_session)
+
     except Exception:
         await async_session.rollback()
         raise HTTPException(status_code=500, detail="Internal server error")
+
     if booking is None:
         raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -91,12 +112,14 @@ async def delete_booking(
     try:
         booking = await services.delete_booking(id, async_session)
         await async_session.commit()
+
     except BookingNotFoundError as error:
         await async_session.rollback()
         raise HTTPException(
             status_code=404,
             detail="Booking not found"
         ) from error
+
     except Exception:
         await async_session.rollback()
         raise HTTPException(status_code=500, detail="Internal server error")
