@@ -35,12 +35,12 @@ async def get_list_booking(
         async_session: AsyncSession = Depends(get_async_session)
 ) -> list[BookingOut]:
     """Возвращает список броней с необязательным фильтром по дате."""
+    stmt = select(Booking)
     if date is not None:
-        bookings = await async_session.execute(select(Booking).where(Booking.booking_date == date))
-    else:
-        bookings = await async_session.execute(select(Booking))
+        stmt = stmt.where(Booking.booking_date == date)
 
-    return list(bookings.scalars().all())
+    bookings = await async_session.scalars(stmt)
+    return list(bookings.all())
 
 
 async def get_booking_by_id(
