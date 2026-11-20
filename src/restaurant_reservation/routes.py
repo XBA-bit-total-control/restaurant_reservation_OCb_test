@@ -26,7 +26,7 @@ async def create_booking(
 ) -> BookingOut:
     """Создаёт и возвращает бронь на свободный слот."""
     try:
-        booking = await services.create_booking(data, async_session)
+        booking = await services.create_booking(async_session, data)
         await async_session.commit()
 
     except SlotAlreadyBookedError as error:
@@ -69,7 +69,7 @@ async def get_bookings(
 ):
     """Возвращает список броней с необязательным фильтром по дате."""
     try:
-        bookings = await services.get_list_booking(date, async_session)
+        bookings = await services.get_list_booking(async_session, date)
     except Exception:
         await async_session.rollback()
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -88,7 +88,7 @@ async def get_booking_by_id(
 ) -> BookingOut:
     """Возвращает бронь по идентификатору."""
     try:
-        booking = await services.get_booking_by_id(id, async_session)
+        booking = await services.get_booking_by_id(async_session, id)
 
     except Exception:
         await async_session.rollback()
@@ -102,6 +102,7 @@ async def get_booking_by_id(
 
 @router.delete(
     "/bookings/{id}",
+    response_model=BookingOut,
     status_code=200
 )
 async def delete_booking(
@@ -110,7 +111,7 @@ async def delete_booking(
 ) -> BookingOut:
     """Отменяет бронь по идентификатору и возвращает обновлённую запись."""
     try:
-        booking = await services.delete_booking(id, async_session)
+        booking = await services.delete_booking(async_session, id)
         await async_session.commit()
 
     except BookingNotFoundError as error:
